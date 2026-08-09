@@ -2,6 +2,10 @@ pub(crate) mod dap;
 pub(crate) mod lsp;
 pub(crate) mod syntax;
 pub(crate) mod typed;
+pub(crate) mod vim_patch;
+
+use crate::static_commands_with_default;
+pub use vim_patch::*;
 
 pub use dap::*;
 use futures_util::FutureExt;
@@ -283,6 +287,7 @@ impl MappableCommand {
                 }));
             }
         }
+        vim_hx_hooks::hook_after_each_command(cx, self);
     }
 
     pub fn name(&self) -> &str {
@@ -302,6 +307,7 @@ impl MappableCommand {
     }
 
     #[rustfmt::skip]
+    static_commands_with_default!(
     static_commands!(
         no_op, "Do nothing",
         move_char_left, "Move left",
@@ -616,7 +622,7 @@ impl MappableCommand {
         goto_prev_tabstop, "Goto next snippet placeholder",
         rotate_selections_first, "Make the first selection your primary one",
         rotate_selections_last, "Make the last selection your primary one",
-    );
+    ));
 }
 
 impl fmt::Debug for MappableCommand {
@@ -4993,7 +4999,7 @@ fn paste_impl(
             // paste insert
             (Paste::Before, false) => range.from(),
             // paste append
-            (Paste::After, false) => range.to(),
+            (Paste::After, false) => vim_hx_hooks::after_paste_start_pos(text, range),
             // paste at cursor
             (Paste::Cursor, _) => range.cursor(text.slice(..)),
         };
